@@ -49,8 +49,7 @@
 #include "TH2D.h"
 #include "TMath.h"
 #include "TTree.h"
-
-#define maxcount 1000 
+//#define maxcount 1000 
 
 //
 // class declaration
@@ -86,42 +85,42 @@ private:
 
   // ----------member data ---------------------------
 public:
-  UInt_t count_dt;
-  UInt_t count_rpc;
-  UInt_t count_rpcbegin[maxcount];
+  // UInt_t count_dt;
+  // UInt_t count_rpc;
+  // UInt_t count_rpcbegin[maxcount];
 
   UInt_t event;
   UInt_t run;
 
-  Int_t wodt_wheel[maxcount];
-  UInt_t wodt_sector[maxcount];
-  UInt_t wodt_station[maxcount];
-  Float_t wodt_radialAngle[maxcount];
-  Float_t wodt_bendingAngle[maxcount];
-  UInt_t wodt_MIP[maxcount];
+  Int_t wodt_wheel;
+  UInt_t wodt_sector;
+  UInt_t wodt_station;
+  Float_t wodt_radialAngle;
+  Float_t wodt_bendingAngle;
+  UInt_t wodt_MIP;
 
   //  bool_t  dtBXmatched[count_dt];
   //  bool_t  hoBXmatched[count_dt];
-  UInt_t dtBX[maxcount];
-  Float_t dtGEta[maxcount];
-  Float_t dtGPhi[maxcount];
-  UInt_t rpcInBX[maxcount];
-  UInt_t rpcOutBX[maxcount];
-  UInt_t hoBX[maxcount];
-  Int_t dtmatch_wheel[maxcount];
-  UInt_t dtmatch_sector[maxcount];
-  UInt_t dtmatch_station[maxcount];
-  Float_t dtmatch_radialAngle[maxcount];
-  Float_t dtmatch_bendingAngle[maxcount];
-  UInt_t dtmatch_qualityCode[maxcount];
-  UInt_t dtmatch_MIP[maxcount];
+  UInt_t dtBX;
+  Float_t dtGEta;
+  Float_t dtGPhi;
+  UInt_t rpcInBX;
+  UInt_t rpcOutBX;
+  UInt_t hoBX;
+  Int_t dtmatch_wheel;
+  UInt_t dtmatch_sector;
+  UInt_t dtmatch_station;
+  Float_t dtmatch_radialAngle;
+  Float_t dtmatch_bendingAngle;
+  UInt_t dtmatch_qualityCode;
+  UInt_t dtmatch_MIP;
  
   
   // book histos
   void bookHistos();
   TTree* tree;
   TH1D*  nEvents;
-  bool   doDebug = true;
+  bool   doDebug = false;
   bool takeevent = false;
 };
 
@@ -163,8 +162,8 @@ void L1ITMuonBarrelRpcHoAnalyzerMatchedDT::analyze(const edm::Event& iEvent, con
 {
   if(doDebug)  std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ event "<< iEvent.id().event() << std::endl;
   using namespace edm;
-  count_dt       = 0;
-  count_rpc      = 0;
+  // count_dt       = 0;
+  // count_rpc      = 0;
   
   iSetup.get<MuonGeometryRecord>().get(_muonGeom);
   iSetup.get<CaloGeometryRecord>().get(_hoGeom);
@@ -215,12 +214,13 @@ void L1ITMuonBarrelRpcHoAnalyzerMatchedDT::analyze(const edm::Event& iEvent, con
     size_t cSize = correlated.size();
     
     //initialization
-    count_dt       = 0;
-    count_rpc      = 0;
+    // count_dt       = 0;
+    // count_rpc      = 0;
     takeevent      = false;
     
     for( size_t idxDt = 0; idxDt < cSize; ++idxDt )	{
-      if(doDebug)    std::cout<<"Inside count_dt: "<< count_dt <<" and idxDt: "<<idxDt <<" with correletaed Size: "<< cSize<<  std::endl; 
+      //      if(doDebug)    std::cout<<"Inside count_dt: "<< count_dt <<" and idxDt: "<<idxDt <<" with correletaed Size: "<< cSize<<  std::endl; 
+      if(doDebug)    std::cout<<"Inside, idxDt: "<<idxDt <<" with correletaed Size: "<< cSize<<  std::endl; 
       
       int iDt = correlated.at(idxDt);
       if ( iDt < 0 ) continue;
@@ -256,23 +256,23 @@ void L1ITMuonBarrelRpcHoAnalyzerMatchedDT::analyze(const edm::Event& iEvent, con
       
       takeevent = true;
       // lets store the info with DT matching
-      dtBX[count_dt]                 = dt.getBX();
-      dtGEta[count_dt]               = dt.getCMSGlobalEta();
-      dtGPhi[count_dt]               = dt.getCMSGlobalPhi();
-      rpcInBX[count_dt]              = rpcIn.getBX();
-      rpcOutBX[count_dt]             = rpcOut.getBX();
-      hoBX[count_dt]                 = hoIn.getBX();
-      dtmatch_sector[count_dt]       = sector;  //dt.getDTData().sector;
-      dtmatch_wheel[count_dt]        = wheel;   //dt.getDTData().wheel;
-      dtmatch_station[count_dt]      = station; //dt.getDTData().station;
-      dtmatch_radialAngle[count_dt]  = dt.getDTData().radialAngle;
-      dtmatch_bendingAngle[count_dt] = dt.getDTData().bendingAngle;
-      dtmatch_qualityCode[count_dt]  = dt.getDTData().qualityCode;
-      dtmatch_MIP[count_dt]          = hoIn.isMIP(hoIn.getHOData().Ehit, hoIn.getHOData().Emax, hoIn.getHOData().Emin);
+      dtBX                  = dt.getBX();
+      dtGEta                = dt.getCMSGlobalEta();
+      dtGPhi                = dt.getCMSGlobalPhi();
+      rpcInBX               = rpcIn.getBX();
+      rpcOutBX              = rpcOut.getBX();
+      hoBX                  = hoIn.getBX();
+      dtmatch_sector        = sector;  //dt.getDTData().sector;
+      dtmatch_wheel         = wheel;   //dt.getDTData().wheel;
+      dtmatch_station       = station; //dt.getDTData().station;
+      dtmatch_radialAngle   = dt.getDTData().radialAngle;
+      dtmatch_bendingAngle  = dt.getDTData().bendingAngle;
+      dtmatch_qualityCode   = dt.getDTData().qualityCode;
+      dtmatch_MIP           = hoIn.isMIP(hoIn.getHOData().Ehit, hoIn.getHOData().Emax, hoIn.getHOData().Emin);
       
       if(doDebug) std::cout <<"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DT Only"<< std::endl;
-      if(doDebug) std::cout<<"(count_dt, Wh, Se, St, benA, radA, mip): ("<<count_dt<<", "<< dtmatch_wheel[count_dt]<<", "<<dtmatch_sector[count_dt]-1<<
-		    ", "<<dtmatch_station[count_dt]<<", "<<dtmatch_bendingAngle[count_dt]<<", "<<dtmatch_radialAngle[count_dt]<<", "<<dtmatch_MIP[count_dt]<<")"<< std::endl;
+      if(doDebug) std::cout<<"(dxDt, Wh, Se, St, benA, radA, mip): ("<<iDt <<", "<< dtmatch_wheel <<", "<<dtmatch_sector -1<<
+		    ", "<<dtmatch_station <<", "<<dtmatch_bendingAngle <<", "<<dtmatch_radialAngle <<", "<<dtmatch_MIP <<")"<< std::endl;
       if(doDebug) std::cout<<"Quality : "<<dt.getDTData().qualityCode<< std::endl;
       
       // RPC+HO algorithem
@@ -284,8 +284,8 @@ void L1ITMuonBarrelRpcHoAnalyzerMatchedDT::analyze(const edm::Event& iEvent, con
       const std::map< std::pair< L1ITMu::TriggerPrimitiveList, L1ITMu::TriggerPrimitiveList >, L1ITMu::TriggerPrimitiveList > rpcHOPairList =  
 	mbltStation.getAssociatedHORpcClusterss(_minDistForHORpcClusterMatch );
       
-      count_rpcbegin[count_dt] = count_rpc;
-      if(doDebug)      std::cout<<"count_dt, count_rpc, count_rpcbegin : "<< count_dt<< ", "<< count_rpc <<", "<< count_rpcbegin[count_dt]<< std::endl;
+      //      count_rpcbegin[count_dt] = count_rpc;
+      //if(doDebug)      std::cout<<"count_dt, count_rpc, count_rpcbegin : "<< count_dt<< ", "<< count_rpc <<", "<< count_rpcbegin[count_dt]<< std::endl;
 
       for( rpcHOPair = rpcHOPairList.begin(); rpcHOPair != rpcHOPairList.end(); ++ rpcHOPair) {
 	_minDistForRpcHOMatch = 0.5; 
@@ -296,11 +296,11 @@ void L1ITMuonBarrelRpcHoAnalyzerMatchedDT::analyze(const edm::Event& iEvent, con
 	const L1ITMu::TriggerPrimitiveList & outRpc = rpcPair.second;
 	
 	if( inRpc.empty() && outRpc.empty() && inHO.empty() ) {
-	  wodt_station[count_rpc]      = 999;
-	  wodt_sector[count_rpc]       = 999;
-	  wodt_wheel[count_rpc]        = 999;
-	  wodt_radialAngle[count_rpc]  = -999.0;
-	  wodt_bendingAngle[count_rpc] = -999.0;
+	  wodt_station       = 999;
+	  wodt_sector        = 999;
+	  wodt_wheel         = 999;
+	  wodt_radialAngle   = -999.0;
+	  wodt_bendingAngle  = -999.0;
 	  continue;
 	}
 	
@@ -350,11 +350,11 @@ void L1ITMuonBarrelRpcHoAnalyzerMatchedDT::analyze(const edm::Event& iEvent, con
 	  
 	  if(inPos > 50 && outPos >  50 && hoPos > 50) {
 	    if(doDebug) std::cout<<"Hits pointer is too Big, reversing!"<< std::endl;
-	    wodt_station[count_rpc]      = 999;
-	    wodt_sector[count_rpc]       = 999;
-	    wodt_wheel[count_rpc]        = 999;
-	    wodt_radialAngle[count_rpc]  = -999.0;
-	    wodt_bendingAngle[count_rpc] = -999.0;
+	    wodt_station       = 999;
+	    wodt_sector        = 999;
+	    wodt_wheel         = 999;
+	    wodt_radialAngle   = -999.0;
+	    wodt_bendingAngle  = -999.0;
 	    continue;
 	  }
 	  
@@ -378,36 +378,36 @@ void L1ITMuonBarrelRpcHoAnalyzerMatchedDT::analyze(const edm::Event& iEvent, con
 	    bendingAngle = -999.0;
 	  }
 
-	  wodt_station[count_rpc]      = rpc1.detId<RPCDetId>().station();
-	  wodt_sector[count_rpc]       = rpc1.detId<RPCDetId>().sector();
-	  wodt_wheel[count_rpc]        = rpc1.detId<RPCDetId>().ring();
-	  wodt_radialAngle[count_rpc]  = radialAngle;
-	  wodt_bendingAngle[count_rpc] = bendingAngle;
-	  wodt_MIP[count_rpc]          = rpc3.isMIP(rpc3.getHOData().Ehit, rpc3.getHOData().Emax, rpc3.getHOData().Emin);
+	  wodt_station       = rpc1.detId<RPCDetId>().station();
+	  wodt_sector        = rpc1.detId<RPCDetId>().sector();
+	  wodt_wheel         = rpc1.detId<RPCDetId>().ring();
+	  wodt_radialAngle   = radialAngle;
+	  wodt_bendingAngle  = bendingAngle;
+	  wodt_MIP           = rpc3.isMIP(rpc3.getHOData().Ehit, rpc3.getHOData().Emax, rpc3.getHOData().Emin);
 	  
-	  if(doDebug) std::cout<<"(count_rpc, Wh, Se, St, benA, radA, mip): ("<<count_rpc<<", "<< wodt_wheel[count_rpc]<<", "<< (wodt_sector[count_rpc] -1) <<", "<< 
-			wodt_station[count_rpc] <<", "<< bendingAngle <<", "<< radialAngle <<", "<< wodt_MIP[count_rpc]<<")"<< std::endl;
+	  if(doDebug) std::cout<<"(Wh, Se, St, benA, radA, mip): ("<< wodt_wheel <<", "<< (wodt_sector  -1) <<", "<< 
+			wodt_station  <<", "<< bendingAngle <<", "<< radialAngle <<", "<< wodt_MIP <<")"<< std::endl;
 	  
 	} // if(inSize && outSize && hoSize)
 	else 
 	  {
-	    wodt_station[count_rpc]      = 999;
-	    wodt_sector[count_rpc]       = 999;
-	    wodt_wheel[count_rpc]        = 999;
-	    wodt_radialAngle[count_rpc]  = -999.0;
-	    wodt_bendingAngle[count_rpc] = -999.0;
+	    wodt_station       = 999;
+	    wodt_sector        = 999;
+	    wodt_wheel         = 999;
+	    wodt_radialAngle   = -999.0;
+	    wodt_bendingAngle  = -999.0;
 	  }
 	
-	count_rpc++;
+	//	count_rpc++;
       } // for( rpcHOPair = rpcHOPairList.begin(); rpcHOPair != rpcHOPairList.end(); ++ rpcHOPair)
-      count_dt++;
-    }  //for( size_t idxDt = 0; idxDt < cSize; ++idxDt )
-    // std::cout<<"for loop for count_dt ends, it should increment now!"<< std::endl;
-    if(takeevent && count_dt == 1)  tree->Fill();
-  }
+      //     count_dt++;
+    } //for( size_t idxDt = 0; idxDt < cSize; ++idxDt )
 
-  if(takeevent)  nEvents->Fill(1);
-  else  nEvents->Fill(0);
+    //filling tree
+    if(takeevent)  tree->Fill();
+    if(takeevent)  nEvents->Fill(1);
+    else  nEvents->Fill(0);
+  }
 }
 
 
@@ -424,33 +424,33 @@ void
   tree->Branch("event", &event, "event/i");
   tree->Branch("run", &run, "run/i");
 
-  tree->Branch("count_dt",&count_dt, "count_dt/i");  
-  tree->Branch("count_rpc",&count_rpc, "count_rpc/i");
+  // tree->Branch("count_dt",&count_dt, "count_dt/i");  
+  // tree->Branch("count_rpc",&count_rpc, "count_rpc/i");
 
-  tree->Branch("count_rpcbegin",&count_rpcbegin, "count_rpcbegin[count_dt]/i");  
-  tree->Branch("dtmatch_wheel",&dtmatch_wheel,"dtmatch_wheel[count_dt]/I");
-  tree->Branch("dtmatch_sector",&dtmatch_sector,"dtmatch_sector[count_dt]/i");
-  tree->Branch("dtmatch_station", &dtmatch_station,"dtmatch_station[count_dt]/i");
-  tree->Branch("dtmatch_radialAngle",&dtmatch_radialAngle,"dtmatch_radialAngle[count_dt]/f");
-  tree->Branch("dtmatch_bendingAngle",&dtmatch_bendingAngle ,"dtmatch_bendingAngle[count_dt]/f");
-  tree->Branch("dtmatch_qualityCode",&dtmatch_qualityCode,"dtmatch_qualityCode[count_dt]/i");
-  tree->Branch("dtmatch_MIP",&dtmatch_MIP,"dtmatch_MIP[count_dt]/i");
-  tree->Branch("dtBX",&dtBX,"dtBX[count_dt]/i");
-  tree->Branch("dtGEta",&dtGEta,"dtGEta[count_dt]/f");
-  tree->Branch("dtGPhi",&dtGPhi,"dtGPhi[count_dt]/f");
-  tree->Branch("rpcInBX",&rpcInBX,"rpcInBX[count_dt]/i");
-  tree->Branch("rpcOutBX",&rpcOutBX,"rpcOutBX[count_dt]/i");
-  tree->Branch("hoBX",&hoBX,"hoBX[count_dt]/i");
-  // tree->Branch("dtBXmatched",&dtBXmatched,"dtBXmatched[count_dt]/O");
-  // tree->Branch("hoBXmatched",&hoBXmatched,"hoBXmatched[count_dt]/O");
+  //  tree->Branch("count_rpcbegin",&count_rpcbegin, "count_rpcbegin/i");  
+  tree->Branch("dtmatch_wheel",&dtmatch_wheel,"dtmatch_wheel/I");
+  tree->Branch("dtmatch_sector",&dtmatch_sector,"dtmatch_sector/i");
+  tree->Branch("dtmatch_station", &dtmatch_station,"dtmatch_station/i");
+  tree->Branch("dtmatch_radialAngle",&dtmatch_radialAngle,"dtmatch_radialAngle/f");
+  tree->Branch("dtmatch_bendingAngle",&dtmatch_bendingAngle ,"dtmatch_bendingAngle/f");
+  tree->Branch("dtmatch_qualityCode",&dtmatch_qualityCode,"dtmatch_qualityCode/i");
+  tree->Branch("dtmatch_MIP",&dtmatch_MIP,"dtmatch_MIP/i");
+  tree->Branch("dtBX",&dtBX,"dtBX/i");
+  tree->Branch("dtGEta",&dtGEta,"dtGEta/f");
+  tree->Branch("dtGPhi",&dtGPhi,"dtGPhi/f");
+  tree->Branch("rpcInBX",&rpcInBX,"rpcInBX/i");
+  tree->Branch("rpcOutBX",&rpcOutBX,"rpcOutBX/i");
+  tree->Branch("hoBX",&hoBX,"hoBX/i");
+  // tree->Branch("dtBXmatched",&dtBXmatched,"dtBXmatched/O");
+  // tree->Branch("hoBXmatched",&hoBXmatched,"hoBXmatched/tree");
 
-  //  tree->Branch("wodt_bx",&wodt_bx,"wodt_bx[count_rpc]/i");
-  tree->Branch("wodt_wheel", &wodt_wheel, "wodt_wheel[count_rpc]/I");
-  tree->Branch("wodt_sector",&wodt_sector,"wodt_sector[count_rpc]/i");
-  tree->Branch("wodt_station",&wodt_station,"wodt_station[count_rpc]/i");
-  tree->Branch("wodt_radialAngle",&wodt_radialAngle,"wodt_radialAngle[count_rpc]/f");
-  tree->Branch("wodt_bendingAngle",&wodt_bendingAngle,"wodt_bendingAngle[count_rpc]/f");
-  tree->Branch("wodt_MIP",&wodt_MIP,"wodt_MIP[count_rpc]/i");
+  //  O->Branch("wodt_bx",&wodt_bx,"wodt_bx /i");
+  tree->Branch("wodt_wheel", &wodt_wheel, "wodt_wheel/I");
+  tree->Branch("wodt_sector",&wodt_sector,"wodt_sector/i");
+  tree->Branch("wodt_station",&wodt_station,"wodt_station/i");
+  tree->Branch("wodt_radialAngle",&wodt_radialAngle,"wodt_radialAngle/f");
+  tree->Branch("wodt_bendingAngle",&wodt_bendingAngle,"wodt_bendingAngle/f");
+  tree->Branch("wodt_MIP",&wodt_MIP,"wodt_MIP/i");
 }
  
 // ------------ method called once each job just after ending the event loop  ------------
