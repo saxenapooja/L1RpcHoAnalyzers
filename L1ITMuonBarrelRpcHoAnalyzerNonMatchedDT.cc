@@ -104,6 +104,7 @@ public:
   UInt_t rpcInBX;
   UInt_t rpcOutBX;
   UInt_t hoBX;
+  UInt_t countHO;
   Int_t dtmatch_wheel;
   UInt_t dtmatch_sector;
   UInt_t dtmatch_station;
@@ -117,8 +118,9 @@ public:
   void bookHistos();
   TTree* tree;
   TH1D*  nEvents;
-  bool  doDebug = true;
-  bool  takeevent = false;
+  bool  doDebug = false;
+  bool  tkEvtA = false;
+  bool  tkEvtB = false;
 };
 
 //
@@ -180,6 +182,10 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
   
   if(doDebug) std::cout<<"Entering into mblt loop"<< std::endl;  
 
+  //initialization
+  tkEvtA      = false;
+  tkEvtB      = false;
+  
   ////
   for ( ; st != stend; ++st ) {
     
@@ -211,8 +217,6 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
     // do the analysis only for the correlated DT, so the results can be compare later wit RPC+HO case
     size_t cSize = correlated.size();
     
-    //initialization
-    takeevent      = false;
     
     for( size_t idxDt = 0; idxDt < cSize; ++idxDt )	{
       if(doDebug)    std::cout<<"Inside, idxDt: "<<idxDt <<" with correletaed Size: "<< cSize<<  std::endl; 
@@ -249,7 +253,7 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
       if(doDebug) std::cout<<"matching the BX"<< std::endl;
       if(!dtBXmatched) continue;
       
-      takeevent = true;
+      tkEvtA = true;
       // lets store the info with DT matching
       dtBX                  = dt.getBX();
       dtGEta                = dt.getCMSGlobalEta();
@@ -267,12 +271,12 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
 		    <<dtmatch_station <<", "<<dtmatch_bendingAngle <<", "<<dtmatch_radialAngle <<")"<< std::endl;
       if(doDebug) std::cout<<"Quality : "<<dt.getDTData().qualityCode<< std::endl;
       
+      if(tkEvtA) break;
     }//for( size_t idxDt = 0; idxDt < cSize; ++idxDt )
 
 
 
-
-
+  
     //////// RPC+HO algorithem
     
     // get all collections
@@ -283,12 +287,13 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
     size_t rpcInMatchSize  = rpcInMatch.size();
     size_t rpcOutMatchSize = rpcOutMatch.size();
     size_t hoMatchSize     = hoMatch.size();
-    
+  
+  
     // collection should not be empty
     if (!( rpcInMatchSize && rpcOutMatchSize && hoMatchSize)) continue;
     
     if(doDebug) std::cout <<"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ RPC+HO"<< std::endl;
-    std::cout<<"Size of the collection: "<<rpcInMatchSize<<", "<< rpcOutMatchSize<<", "<< hoMatchSize<< std::endl; 
+    if(doDebug)    std::cout<<"Size of the collection: "<<rpcInMatchSize<<", "<< rpcOutMatchSize<<", "<< hoMatchSize<< std::endl; 
     
     const  L1ITMu::TriggerPrimitive & rpcIn  = *rpcInMatch.front();
     const  L1ITMu::TriggerPrimitive & rpcOut = *rpcOutMatch.front();
@@ -298,34 +303,27 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
     bool hoBXmatched  =  (  ( hoIn.getBX() == rpcIn.getBX() && hoIn.getBX() == rpcOut.getBX() ) ||
 			    (_qualityHORemappingMode >  1 && rpcIn.getBX()==rpcOut.getBX()  && abs(hoIn.getBX()-rpcIn.getBX()) <= 1 ) );
     
-    if(!hoBXmatched) { std::cout<<"BX matched failed for RpcHo"<< std::endl; continue; } else std::cout<<"BT Matched for Rpc&HO"<< std::endl;
+    if(doDebug) std::cout<<"matching BX for Rpc&HO"<< std::endl;
+    if(!hoBXmatched) continue;
     
     
     // collection should be provided here and then the checks should be done
-    std::map< std::pair< L1ITMu::TriggerPrimitiveList, L1ITMu::TriggerPrimitiveList >, L1ITMu::TriggerPrimitiveList >::const_iterator rpcHOPair ;      
-    
+    _minDistForRpcHOMatch = 0.5; 
+
+
     const std::map< std::pair< L1ITMu::TriggerPrimitiveList, L1ITMu::TriggerPrimitiveList >, L1ITMu::TriggerPrimitiveList > rpcHOPairList =  
       mbltStation.getAllHORpcClusterss(_minDistForHORpcClusterMatch );
-    
-    std::map< std::pair< L1ITMu::TriggerPrimitiveList, L1ITMu::TriggerPrimitiveList >, L1ITMu::TriggerPrimitiveList >::const_iterator rpcHOPair_ = rpcHOPairList.begin();
+    if(rpcHOPairList.empty()) continue;
 
-    for( rpcHOPair = rpcHOPairList.begin(); rpcHOPair != rpcHOPairList.end(); ++ rpcHOPair) {
-    _minDistForRpcHOMatch = 0.5; 
-    std::cout<<"RpcHOPair list......."<< std::endl;
+    std::map< std::pair< L1ITMu::TriggerPrimitiveList, L1ITMu::TriggerPrimitiveList >, L1ITMu::TriggerPrimitiveList >::const_iterator rpcHOPair = rpcHOPairList.begin();
 
     const std::pair <L1ITMu::TriggerPrimitiveList, L1ITMu::TriggerPrimitiveList > & rpcPair = rpcHOPair->first;
     const L1ITMu::TriggerPrimitiveList & inHO = rpcHOPair->second;
     const L1ITMu::TriggerPrimitiveList & inRpc = rpcPair.first;
     const L1ITMu::TriggerPrimitiveList & outRpc = rpcPair.second;
     
-    if( inRpc.empty() && outRpc.empty() && inHO.empty() ) {
-      wodt_station       = 999;
-      wodt_sector        = 999;
-      wodt_wheel         = 999;
-      wodt_radialAngle   = -999.0;
-      wodt_bendingAngle  = -999.0;
-      continue;
-    }
+    if( inRpc.empty() && outRpc.empty() && inHO.empty() ) continue;
+
     
     L1ITMu::PrimitiveCombiner combiner( _resol, _muonGeom, _hoGeom );		
     size_t inSize  = inRpc.size();
@@ -379,6 +377,8 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
 	wodt_wheel         = 999;
 	wodt_radialAngle   = -999.0;
 	wodt_bendingAngle  = -999.0;
+	wodt_MIP           = 999;
+	countHO            = 999;
 	continue;
       }
       
@@ -391,10 +391,9 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
       combiner.addRpcIn( rpc1 );
       combiner.addRpcOut( rpc2 );
       combiner.addHO( rpc3 );
-      takeevent = true;
-      
+
       if ( combiner.isValid() ) {
-	//std::cout<<"=== I am making a combination ==="<<std::endl;
+	tkEvtB = true;
 	combiner.combine();
 	radialAngle = combiner.radialAngle();
 	bendingAngle = combiner.bendingAngle( ); 
@@ -403,7 +402,8 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
 	radialAngle = -999.0;
 	bendingAngle = -999.0;
       }
-      
+
+      countHO               = hoMatchSize;      
       rpcInBX               = rpc1.getBX();
       rpcOutBX              = rpc2.getBX();
       hoBX                  = rpc3.getBX();
@@ -413,27 +413,33 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
       wodt_radialAngle   = radialAngle;
       wodt_bendingAngle  = bendingAngle;
       wodt_MIP           = rpc3.isMIP(rpc3.getHOData().Ehit, rpc3.getHOData().Emax, rpc3.getHOData().Emin);
+      wodt_Ehit          = rpc3.getHOData().Ehit;
+      wodt_Emax          = rpc3.getHOData().Emax;  
+      wodt_Emin          = rpc3.getHOData().Emin; 
       
       if(doDebug) std::cout<<"(Wh, Se, St, benA, radA, mip): ("<< wodt_wheel <<", "<< (wodt_sector  -1) <<", "<< 
 		    wodt_station  <<", "<< bendingAngle <<", "<< radialAngle <<", "<< wodt_MIP <<")"<< std::endl;
-      
+      if(doDebug) std::cout <<"MIP, Ehit, Emax, Emin :"<< rpc3.getHOData().Ehit <<", "<< rpc3.getHOData().Emax<<", "<< rpc3.getHOData().Emin << std::endl; 
     } // if(inSize && outSize && hoSize)
     else 
       {
+	countHO            = 999;
 	wodt_station       = 999;
 	wodt_sector        = 999;
 	wodt_wheel         = 999;
 	wodt_radialAngle   = -999.0;
 	wodt_bendingAngle  = -999.0;
+	wodt_MIP           = 999;
+
       }
     
-  } // for( rpcHOPair = rpcHOPairList.begin(); rpcHOPair != rpcHOPairList.end(); ++ rpcHOPair)
-  
-  
-  if(takeevent)  tree->Fill();
-  if(takeevent)     nEvents->Fill(1);
-  else  nEvents->Fill(0);
+    if(tkEvtA && tkEvtB) break;
   }// for ( ; st != stend; ++st )
+
+  if(doDebug) std::cout<<"takeEvent :"<<tkEvtA <<", "<< tkEvtB<< std::endl;
+  if(tkEvtA && tkEvtB)    tree->Fill();
+  if(tkEvtA && tkEvtB)     nEvents->Fill(1);
+  else  nEvents->Fill(0);
 }
 
 
@@ -461,7 +467,7 @@ void
   tree->Branch("rpcInBX",&rpcInBX,"rpcInBX/i");
   tree->Branch("rpcOutBX",&rpcOutBX,"rpcOutBX/i");
   tree->Branch("hoBX",&hoBX,"hoBX/i");
-  // tree->Branch("dtBXmatched",&dtBXmatched,"dtBXmatched/O");
+  tree->Branch("countHO",&countHO,"countHO/I");
   // tree->Branch("hoBXmatched",&hoBXmatched,"hoBXmatched/tree");
 
   //  O->Branch("wodt_bx",&wodt_bx,"wodt_bx /i");
