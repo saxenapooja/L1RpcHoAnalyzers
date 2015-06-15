@@ -95,12 +95,19 @@ public:
   Float_t wodt_radialAngle;
   Float_t wodt_bendingAngle;
   UInt_t wodt_MIP;
+  Float_t wodt_Ehit;
 
   //  bool_t  dtBXmatched[count_dt];
   //  bool_t  hoBXmatched[count_dt];
   UInt_t dtBX;
   Float_t dtGEta;
   Float_t dtGPhi;
+  Float_t rpcInGEta;
+  Float_t rpcInGPhi;
+  Float_t rpcOutGEta;
+  Float_t rpcOutGPhi;
+  Float_t HOGEta;
+  Float_t HOGPhi;
   UInt_t rpcInBX;
   UInt_t rpcOutBX;
   UInt_t hoBX;
@@ -111,7 +118,6 @@ public:
   Float_t dtmatch_radialAngle;
   Float_t dtmatch_bendingAngle;
   UInt_t dtmatch_qualityCode;
-  //  UInt_t dtmatch_MIP;
  
   
   // book histos
@@ -199,7 +205,7 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
     /// get dt to rpc associations
     size_t dtListSize = mbltStation.getDtSegments().size();
     std::vector<size_t> correlated;
-    if(doDebug && dtListSize >0 )    std::cout<<"dtListSize is :"<< dtListSize <<" correlated size is : "<<  correlated.size()<< std::endl;
+    if(doDebug && dtListSize > 0 )    std::cout<<"mbltCollection  is :"<< dtListSize << std::endl;
 
     /// loop over DT collections
     for ( size_t iDt = 0; iDt < dtListSize; ++iDt ) {
@@ -231,7 +237,7 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
       // get all collections
       L1ITMu::TriggerPrimitiveList rpcInMatch  = mbltStation.getRpcInAssociatedStubs( iDt );
       L1ITMu::TriggerPrimitiveList rpcOutMatch = mbltStation.getRpcOutAssociatedStubs( iDt );
-      L1ITMu::TriggerPrimitiveList hoMatch     = mbltStation.getHOAssociatedStubs( iDt);
+      L1ITMu::TriggerPrimitiveList hoMatch     = mbltStation.getHOInner(); //mbltStation.getHOAssociatedStubs( iDt);
       
       size_t rpcInMatchSize  = rpcInMatch.size();
       size_t rpcOutMatchSize = rpcOutMatch.size();
@@ -240,12 +246,11 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
       if(doDebug) std::cout<<"DT-algo::sizes are, "<<rpcInMatchSize<<", "<< rpcOutMatchSize<<", "<< hoMatchSize << std::endl;
 
       // collection should not be empty
-      ///      if (!( rpcInMatchSize && rpcOutMatchSize && hoMatchSize)) continue;
-      if (!( rpcInMatchSize && rpcOutMatchSize)) continue;
+      if (!( rpcInMatchSize && rpcOutMatchSize && hoMatchSize)) continue;
+      //if (!( rpcInMatchSize && rpcOutMatchSize)) continue;
       
       const  L1ITMu::TriggerPrimitive & rpcIn  = *rpcInMatch.front();
       const  L1ITMu::TriggerPrimitive & rpcOut = *rpcOutMatch.front();
-      //      const  L1ITMu::TriggerPrimitive & hoIn   = *hoMatch.front();
       
       bool dtBXmatched  =  ( ( dt.getBX() == rpcIn.getBX() && dt.getBX() == rpcOut.getBX() )
 			     || (_qualityRemappingMode > 1 && rpcIn.getBX()==rpcOut.getBX() && abs(dt.getBX()-rpcIn.getBX())<=1) ) ;
@@ -258,9 +263,9 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
       dtBX                  = dt.getBX();
       dtGEta                = dt.getCMSGlobalEta();
       dtGPhi                = dt.getCMSGlobalPhi();
-      dtmatch_sector        = sector;  //dt.getDTData().sector;
-      dtmatch_wheel         = wheel;   //dt.getDTData().wheel;
-      dtmatch_station       = station; //dt.getDTData().station;
+      dtmatch_sector        = sector-1;  //dt.getDTData().sector;
+      dtmatch_wheel         = wheel;     //dt.getDTData().wheel;
+      dtmatch_station       = station;   //dt.getDTData().station;
       dtmatch_radialAngle   = dt.getDTData().radialAngle;
       dtmatch_bendingAngle  = dt.getDTData().bendingAngle;
       dtmatch_qualityCode   = dt.getDTData().qualityCode;
@@ -274,7 +279,7 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
       if(tkEvtA) break;
     }//for( size_t idxDt = 0; idxDt < cSize; ++idxDt )
 
-
+    if(!tkEvtA) continue;
 
   
     //////// RPC+HO algorithem
@@ -333,17 +338,16 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
     Float_t bendingAngle = 0;
     
     if(doDebug) std::cout<<"Containor has hits, Num-hits (In, Out, ho):("<<inSize <<", "<< outSize <<", "<< hoSize <<
-		  ") for minDistRpcHODist: "<<_minDistForRpcHOMatch << std::endl;
+		  ") for threshold minDistRpcHODist: "<<_minDistForRpcHOMatch << std::endl;
     
     if(inSize && outSize && hoSize) {
-      //	   _minDistForRpcHOMatch = 0.5;
       size_t inPos  = 999;
       size_t outPos = 999;
       size_t hoPos  = 999;
-      
+
       for ( size_t i = 0; i < inSize; ++i ) { 
 	double phi_RpcIn = inRpc.at( i )->getCMSGlobalPhi();
-	if(doDebug) std::cout<<"rpcIn id: \t" <<i <<" \t phi-I \t"<< phi_RpcIn << std::endl;
+       	if(doDebug) std::cout<<"rpcIn id: \t" <<i <<" \t phi-I \t"<< phi_RpcIn << std::endl;
 	
 	for ( size_t j = 0; j < outSize; ++j ) {             
 	  double phi_RpcOut = outRpc.at( j )->getCMSGlobalPhi();
@@ -354,7 +358,7 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
 	    double phi_ho = inHO.at( k )->getCMSGlobalPhi(); 
 	    double deltaPhi_RpcOutHO = fabs( reco::deltaPhi( phi_RpcIn, phi_ho));
 	    
-	    double RpcToHOdist          = deltaPhi_RpcInRpcOut + deltaPhi_RpcOutHO;
+	    double  RpcToHOdist          = deltaPhi_RpcInRpcOut + deltaPhi_RpcOutHO;
 	    if(doDebug) std::cout<<" ho id : \t"<<k << "\t phi-III \t "<<phi_ho <<"  phi_HORpcOut \t " << deltaPhi_RpcOutHO << " dPhi_rpcHO : \t"<< RpcToHOdist << std::endl;
 	    
 	    if( RpcToHOdist < _minDistForRpcHOMatch) {
@@ -362,23 +366,17 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
 	      outPos = j;
 	      hoPos = k;
 	      if(doDebug) std::cout<<" RPC_to_HO distances : \t"<<  RpcToHOdist <<" threshold_dist, \t"<< _minDistForRpcHOMatch << std::endl;
-		  _minDistForRpcHOMatch = RpcToHOdist;
+	      _minDistForRpcHOMatch = RpcToHOdist;
+
 	    }
 	  }
 	}
       } // for ( size_t i = 0; i < inSize; ++i )
       
-      if(doDebug)  std::cout<<"Rpc-HO algo:: (i, j, k) : \t"<<inPos<<"\t"<<outPos<<"\t"<<hoPos<< std::endl;
+      if(doDebug)  std::cout<<"Rpc-HO algo:: (i, j, k) : \t"<<inPos<<"\t"<<outPos<<"\t"<<hoPos<<" with minDistance :"<< _minDistForRpcHOMatch << std::endl;
       
       if(inPos > 50 && outPos >  50 && hoPos > 50) {
 	if(doDebug) std::cout<<"Hits pointer is too Big, reversing!"<< std::endl;
-	wodt_station       = 999;
-	wodt_sector        = 999;
-	wodt_wheel         = 999;
-	wodt_radialAngle   = -999.0;
-	wodt_bendingAngle  = -999.0;
-	wodt_MIP           = 999;
-	countHO            = 999;
 	continue;
       }
       
@@ -408,34 +406,27 @@ void L1ITMuonBarrelRpcHoAnalyzerNonMatchedDT::analyze(const edm::Event& iEvent, 
       rpcOutBX              = rpc2.getBX();
       hoBX                  = rpc3.getBX();
       wodt_station       = rpc1.detId<RPCDetId>().station();
-      wodt_sector        = rpc1.detId<RPCDetId>().sector();
+      wodt_sector        = rpc1.detId<RPCDetId>().sector()-1;
       wodt_wheel         = rpc1.detId<RPCDetId>().ring();
       wodt_radialAngle   = radialAngle;
       wodt_bendingAngle  = bendingAngle;
       wodt_MIP           = rpc3.isMIP(rpc3.getHOData().Ehit, rpc3.getHOData().Emax, rpc3.getHOData().Emin);
       wodt_Ehit          = rpc3.getHOData().Ehit;
-      wodt_Emax          = rpc3.getHOData().Emax;  
-      wodt_Emin          = rpc3.getHOData().Emin; 
-      
-      if(doDebug) std::cout<<"(Wh, Se, St, benA, radA, mip): ("<< wodt_wheel <<", "<< (wodt_sector  -1) <<", "<< 
+      rpcInGEta          = rpc1.getCMSGlobalEta();
+      rpcInGPhi          = rpc1.getCMSGlobalPhi();
+      rpcOutGEta         = rpc2.getCMSGlobalEta();
+      rpcOutGPhi         = rpc2.getCMSGlobalPhi();
+      HOGEta             = rpc3.getCMSGlobalEta();    
+      HOGPhi             = rpc3.getCMSGlobalPhi();    
+
+      if(doDebug) std::cout<<"(Wh, Se, St, benA, radA, mip): ("<< wodt_wheel <<", "<< wodt_sector <<", "<< 
 		    wodt_station  <<", "<< bendingAngle <<", "<< radialAngle <<", "<< wodt_MIP <<")"<< std::endl;
       if(doDebug) std::cout <<"MIP, Ehit, Emax, Emin :"<< rpc3.getHOData().Ehit <<", "<< rpc3.getHOData().Emax<<", "<< rpc3.getHOData().Emin << std::endl; 
     } // if(inSize && outSize && hoSize)
-    else 
-      {
-	countHO            = 999;
-	wodt_station       = 999;
-	wodt_sector        = 999;
-	wodt_wheel         = 999;
-	wodt_radialAngle   = -999.0;
-	wodt_bendingAngle  = -999.0;
-	wodt_MIP           = 999;
-
-      }
     
     if(tkEvtA && tkEvtB) break;
   }// for ( ; st != stend; ++st )
-
+  
   if(doDebug) std::cout<<"takeEvent :"<<tkEvtA <<", "<< tkEvtB<< std::endl;
   if(tkEvtA && tkEvtB)    tree->Fill();
   if(tkEvtA && tkEvtB)     nEvents->Fill(1);
@@ -470,13 +461,22 @@ void
   tree->Branch("countHO",&countHO,"countHO/I");
   // tree->Branch("hoBXmatched",&hoBXmatched,"hoBXmatched/tree");
 
-  //  O->Branch("wodt_bx",&wodt_bx,"wodt_bx /i");
+  tree->Branch("rpcInGEta",&rpcInGEta,"rpcInGEta/f");
+  tree->Branch("rpcInGPhi",&rpcInGPhi,"rpcInGPhi/f");
+
+  tree->Branch("rpcOutGEta",&rpcOutGEta,"rpcOutGEta/f");
+  tree->Branch("rpcOutGPhi",&rpcOutGPhi,"rpcOutGPhi/f");
+
+  tree->Branch("HOGEta",&HOGEta,"HOGEta/f");
+  tree->Branch("HOGPhi",&HOGPhi,"HOGPhi/f");
+
   tree->Branch("wodt_wheel", &wodt_wheel, "wodt_wheel/I");
   tree->Branch("wodt_sector",&wodt_sector,"wodt_sector/i");
   tree->Branch("wodt_station",&wodt_station,"wodt_station/i");
   tree->Branch("wodt_radialAngle",&wodt_radialAngle,"wodt_radialAngle/f");
   tree->Branch("wodt_bendingAngle",&wodt_bendingAngle,"wodt_bendingAngle/f");
   tree->Branch("wodt_MIP",&wodt_MIP,"wodt_MIP/i");
+  tree->Branch("wodt_Ehit",&wodt_Ehit,"wodt_Ehit/f");  
 }
  
 // ------------ method called once each job just after ending the event loop  ------------
