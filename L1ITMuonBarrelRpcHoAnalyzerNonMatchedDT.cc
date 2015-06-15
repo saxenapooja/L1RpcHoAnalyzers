@@ -459,7 +459,6 @@ void
   tree->Branch("rpcOutBX",&rpcOutBX,"rpcOutBX/i");
   tree->Branch("hoBX",&hoBX,"hoBX/i");
   tree->Branch("countHO",&countHO,"countHO/I");
-  // tree->Branch("hoBXmatched",&hoBXmatched,"hoBXmatched/tree");
 
   tree->Branch("rpcInGEta",&rpcInGEta,"rpcInGEta/f");
   tree->Branch("rpcInGPhi",&rpcInGPhi,"rpcInGPhi/f");
